@@ -1,0 +1,27 @@
+# BAR backups — large, user-private
+backups/
+
+# Forensic artifacts produced by running mb-audit on a real site
+# (the tool generates them; they don't belong in the app source)
+deletion-event-*.txt
+*.tar.gz
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# uv / venv
+.venv/
+.python-version
+
+# Build artifacts
+build/
+dist/
+
+# OS
+.DS_Store
