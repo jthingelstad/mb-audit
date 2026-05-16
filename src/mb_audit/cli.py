@@ -29,6 +29,12 @@ from mb_audit.audit.reconciler import Finding, reconcile
 from mb_audit.audit.severity import MediaClassification
 from mb_audit.bar import parse_bar
 from mb_audit.bar.models import BarInventory, Post
+from mb_audit.cli_support import (
+    build_media_probe_targets,
+    resolve_site_url,
+    slice_inventory,
+    unique_media_urls,
+)
 from mb_audit.live.feed import fetch_feed_inventory
 from mb_audit.live.fetcher import Fetcher
 from mb_audit.live.inventory import LiveInventory
@@ -188,10 +194,7 @@ def verify(
     inventories: list[LiveInventory] = [mb_inventory]
     permalink_client: httpx.Client | None = None
 
-    # Default --site to the BAR's home_page_url unless caller passed empty string.
-    effective_site = site if site is not None else inv.home_page_url
-    if site == "":
-        effective_site = ""
+    effective_site = resolve_site_url(site, inv.home_page_url)
 
     if effective_site:
         console.print(f"[bold]Fetching public feed:[/bold] {effective_site}")
@@ -220,13 +223,7 @@ def verify(
 
     media_status: dict[str, int] = {}
     if media_check:
-        all_media: list[str] = []
-        seen: set[str] = set()
-        for p in posts:
-            for u in p.media_urls:
-                if u not in seen:
-                    seen.add(u)
-                    all_media.append(u)
+        all_media = unique_media_urls(posts)
         console.print(f"[bold]Probing {len(all_media)} media URL(s)[/bold] "
                       f"(concurrency={media_concurrency})")
         probes = probe_all(all_media, concurrency=media_concurrency)
@@ -258,7 +255,7 @@ def verify(
 
     # Build a synthetic limited-bar inventory for the reconciler when --limit was used,
     # so `extras` only considers the same slice.
-    bar_for_reconcile = inv if limit is None else _slice_inventory(inv, limit)
+    bar_for_reconcile = inv if limit is None else slice_inventory(inv, limit)
 
     findings = reconcile(
         bar=bar_for_reconcile,
@@ -408,18 +405,6 @@ def _make_run_id(bar: Path, started: datetime) -> str:
     return f"{started.strftime('%Y%m%dT%H%M%S')}-{h.hexdigest()[:8]}"
 
 
-def _slice_inventory(inv: BarInventory, n: int) -> BarInventory:
-    return BarInventory(
-        source_path=inv.source_path,
-        host=inv.host,
-        home_page_url=inv.home_page_url,
-        feed_title=inv.feed_title,
-        posts=inv.posts[:n],
-        media=inv.media,
-        warnings=inv.warnings,
-    )
-
-
 # ---------------- verify-media ----------------
 
 @app.command("verify-media")
@@ -467,9 +452,7 @@ def verify_media(
         console.print("[yellow]BAR contains no media; nothing to audit.[/yellow]")
         raise typer.Exit(code=0)
 
-    effective_site = site if site is not None else inv.home_page_url
-    if site == "":
-        effective_site = ""
+    effective_site = resolve_site_url(site, inv.home_page_url)
     if not effective_site:
         console.print("[red]No site URL — cannot probe media.[/red]")
         raise typer.Exit(code=2)
@@ -518,44 +501,15 @@ def verify_media(
     )
 
     # ---- 2. Build the URL list to probe ----
-    base = inv.home_page_url.rstrip("/") + "/"
-    archive_urls = [base + a.path for a in inv.media]
-
-    # External URLs referenced from BAR posts (optional)
-    external_urls: list[str] = []
-    if include_external:
-        site_host = inv.host.lower()
-        seen_ext: set[str] = set()
-        for post in inv.posts:
-            for u in post.media_urls:
-                if u in seen_ext:
-                    continue
-                from urllib.parse import urlparse as _urlp
-                if _urlp(u).netloc.lower() != site_host:
-                    seen_ext.add(u)
-                    external_urls.append(u)
-
-    # Internal post-referenced URLs that are NOT in archive_urls (orphan_referenced)
-    archive_set = set(archive_urls)
-    extra_internal: list[str] = []
-    seen_int: set[str] = set()
-    for post in inv.posts:
-        for u in post.media_urls:
-            from urllib.parse import urlparse as _urlp
-            if _urlp(u).netloc.lower() == inv.host.lower():
-                if u not in archive_set and u not in seen_int:
-                    seen_int.add(u)
-                    extra_internal.append(u)
-
-    all_urls = archive_urls + extra_internal + external_urls
+    targets = build_media_probe_targets(inv, include_external=include_external)
     console.print(
-        f"[bold]Probe targets:[/bold] {len(archive_urls)} archive + "
-        f"{len(extra_internal)} internal-orphan + {len(external_urls)} external "
-        f"= {len(all_urls)} total"
+        f"[bold]Probe targets:[/bold] {len(targets.archive_urls)} archive + "
+        f"{len(targets.extra_internal_urls)} internal-orphan + "
+        f"{len(targets.external_urls)} external = {len(targets.all_urls)} total"
     )
 
     probes_by_url = _gather_media_status(
-        urls=all_urls, site_url=effective_site,
+        urls=targets.all_urls, site_url=effective_site,
         concurrency=concurrency, refresh=media_refresh,
     )
 
