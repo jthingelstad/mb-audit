@@ -4,7 +4,6 @@ from __future__ import annotations
 from collections import Counter
 from datetime import datetime
 from pathlib import Path
-from typing import Iterable
 
 from mb_audit.audit.reconciler import Finding
 from mb_audit.audit.severity import Classification, Severity
@@ -30,12 +29,6 @@ def render_markdown(
     total = len(findings)
     n_missing = by_class[Classification.MISSING]
     n_relocated = by_class[Classification.RELOCATED]
-    n_modified = by_class[Classification.MODIFIED]
-    n_media = by_class[Classification.MEDIA_BROKEN]
-    n_fuzzy = by_class[Classification.FUZZY_MATCH]
-    n_drift = by_class[Classification.METADATA_DRIFT]
-    n_extra = by_class[Classification.EXTRA]
-    n_ok = by_class[Classification.OK]
 
     parts: list[str] = []
     parts.append(f"# mb-audit report `{run_id}`")

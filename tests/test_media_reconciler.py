@@ -3,8 +3,6 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
-import pytest
-
 from mb_audit.audit.media import MediaProbe
 from mb_audit.audit.media_reconciler import reconcile_media
 from mb_audit.audit.severity import MediaClassification, Severity

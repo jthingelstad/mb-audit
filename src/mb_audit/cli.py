@@ -26,7 +26,7 @@ from mb_audit.audit.media import MediaProbe, probe_all, probe_many as media_prob
 from mb_audit.audit.media_reconciler import MediaFinding, reconcile_media
 from mb_audit.audit.permalinks import probe_many as permalink_probe_many
 from mb_audit.audit.reconciler import Finding, reconcile
-from mb_audit.audit.severity import Classification, MediaClassification
+from mb_audit.audit.severity import MediaClassification
 from mb_audit.bar import parse_bar
 from mb_audit.bar.models import BarInventory, Post
 from mb_audit.live.feed import fetch_feed_inventory

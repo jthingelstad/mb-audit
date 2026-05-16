@@ -45,10 +45,6 @@ def reconcile_media(
     site_host = urlparse(bar.home_page_url).netloc.lower()
     bar_url_prefix = bar.home_page_url.rstrip("/") + "/"
 
-    # Set of paths the BAR has on disk (e.g., "uploads/2023/abc.jpg")
-    bar_paths = {a.path: a for a in bar.media}
-    bar_size_by_url = {bar_url_prefix + a.path: a.size_bytes for a in bar.media}
-
     # Track URLs we've already produced findings for (so we don't double-count
     # post-referenced URLs that are also in bar_paths).
     seen_urls: set[str] = set()

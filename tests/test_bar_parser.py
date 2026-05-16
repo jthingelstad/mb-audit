@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import io
 import json
 import zipfile
 from pathlib import Path
