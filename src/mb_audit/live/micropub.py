@@ -37,7 +37,7 @@ import asyncio
 import logging
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Iterable
+from typing import Any, Callable, Iterable, cast
 
 import httpx
 
@@ -49,6 +49,7 @@ DEFAULT_PAGE_SIZE = 200
 DEFAULT_PAGE_DELAY_SEC = 0.5  # be polite between paginated requests
 
 log = logging.getLogger(__name__)
+ProgressCallback = Callable[[int, int], None]
 
 
 class MicropubError(Exception):
@@ -109,7 +110,7 @@ async def lookup_many(
     token: str,
     endpoint: str = DEFAULT_MICROPUB_ENDPOINT,
     concurrency: int = DEFAULT_CONCURRENCY,
-    on_progress: callable | None = None,  # type: ignore[type-arg]
+    on_progress: ProgressCallback | None = None,
 ) -> list[PerUrlLookup]:
     """Concurrent per-URL Micropub lookups."""
     urls = list(post_urls)
@@ -143,7 +144,10 @@ def fetch_config(token: str, endpoint: str = DEFAULT_MICROPUB_ENDPOINT) -> dict[
                 f"Micropub auth failed ({r.status_code}). Check MICROBLOG_TOKEN."
             )
         r.raise_for_status()
-        return r.json()
+        payload = r.json()
+        if not isinstance(payload, dict):
+            raise MicropubError("Micropub config response is not an object")
+        return cast(dict[str, Any], payload)
 
 
 def pick_destination_uid(config: dict[str, Any], home_page_url: str) -> str | None:
@@ -172,7 +176,7 @@ def fetch_full_inventory(
     page_size: int = DEFAULT_PAGE_SIZE,
     page_delay_sec: float = DEFAULT_PAGE_DELAY_SEC,
     max_pages: int = 2000,
-    on_page: callable | None = None,  # type: ignore[type-arg]
+    on_page: ProgressCallback | None = None,
 ) -> LiveInventory:
     """Page through `q=source` to build a complete inventory of MB posts.
 

@@ -23,12 +23,12 @@ from rich.table import Table
 
 from mb_audit.audit import media_cache, permalink_cache
 from mb_audit.audit.media import MediaProbe, probe_all, probe_many as media_probe_many
-from mb_audit.audit.media_reconciler import reconcile_media
+from mb_audit.audit.media_reconciler import MediaFinding, reconcile_media
 from mb_audit.audit.permalinks import probe_many as permalink_probe_many
-from mb_audit.audit.reconciler import reconcile
+from mb_audit.audit.reconciler import Finding, reconcile
 from mb_audit.audit.severity import Classification, MediaClassification
 from mb_audit.bar import parse_bar
-from mb_audit.bar.models import BarInventory
+from mb_audit.bar.models import BarInventory, Post
 from mb_audit.live.feed import fetch_feed_inventory
 from mb_audit.live.fetcher import Fetcher
 from mb_audit.live.inventory import LiveInventory
@@ -318,7 +318,7 @@ def _fetch_micropub_inventory(
 
 def _gather_permalink_status(
     *,
-    posts: list,
+    posts: list[Post],
     site_url: str,
     concurrency: int,
     refresh: bool,
@@ -385,7 +385,7 @@ def _gather_permalink_status(
     return {**cached_pairs, **new_probes_by_url}
 
 
-def _print_summary(findings: list, started: datetime, finished: datetime) -> None:
+def _print_summary(findings: list[Finding], started: datetime, finished: datetime) -> None:
     from collections import Counter
     by_class = Counter(f.classification.value for f in findings)
     t = Table(title="Summary", show_header=True, header_style="bold")
@@ -651,7 +651,11 @@ def _gather_media_status(
     return {**cached_by_url, **new_by_url}
 
 
-def _print_media_summary(findings: list, started: datetime, finished: datetime) -> None:
+def _print_media_summary(
+    findings: list[MediaFinding],
+    started: datetime,
+    finished: datetime,
+) -> None:
     from collections import Counter
     by_class = Counter(f.classification.value for f in findings)
     t = Table(title="Media summary", show_header=True, header_style="bold")

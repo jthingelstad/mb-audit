@@ -60,10 +60,11 @@ def _classify_one(
 ) -> Finding:
     api_found = res.found_url is not None
     site_status = permalink_status.get(post.url)
-    site_known = site_status is not None
-    site_present = site_known and 200 <= site_status < 400
-    site_404 = site_known and site_status == 404
-    site_error = site_known and (site_status == 0 or 500 <= site_status < 600)
+    site_present = site_status is not None and 200 <= site_status < 400
+    site_404 = site_status == 404
+    site_error = site_status is not None and (
+        site_status == 0 or 500 <= site_status < 600
+    )
 
     # Both sources agree it's gone
     if not api_found and site_404:
@@ -83,11 +84,14 @@ def _classify_one(
     # API says no, site error/unknown — degrade to MISSING but flag the uncertainty
     if not api_found:
         return _make(post, res, Classification.MISSING,
-                    note=_missing_note(res) + (f" site={site_status}" if site_known else ""),
+                    note=_missing_note(res) + (f" site={site_status}" if site_status is not None else ""),
                     evidence={
                         "micropub_status": res.micropub_status,
                         "permalink_status": site_status,
                     })
+
+    found_url = res.found_url
+    assert found_url is not None
 
     # API found it — now check what the site says
     if site_404:
@@ -104,9 +108,9 @@ def _classify_one(
         return _make(post, res, Classification.FUZZY_MATCH,
                     note=res.note or "matched only via fuzzy")
 
-    if _is_relocated(post.url, res.found_url):
+    if _is_relocated(post.url, found_url):
         return _make(post, res, Classification.RELOCATED,
-                    note=f"BAR url={post.url} live url={res.found_url}")
+                    note=f"BAR url={post.url} live url={found_url}")
 
     # Content drift (only when we can compare against live content)
     if res.matched_item is not None and res.matched_item.content_html:
@@ -122,9 +126,9 @@ def _classify_one(
                     evidence={"broken_urls": broken[:10]})
 
     # Host drift (BAR url and live url share the same path but the host changed)
-    if _has_host_drift(post.url, res.found_url):
+    if _has_host_drift(post.url, found_url):
         return _make(post, res, Classification.METADATA_DRIFT,
-                    note=f"host drift: BAR={post.url} live={res.found_url}")
+                    note=f"host drift: BAR={post.url} live={found_url}")
 
     # Tag drift
     if res.matched_item is not None:

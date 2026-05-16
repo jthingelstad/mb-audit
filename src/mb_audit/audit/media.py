@@ -3,9 +3,11 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass
-from typing import Iterable
+from typing import Callable, Iterable
 
 import httpx
+
+ProgressCallback = Callable[[int, int], None]
 
 
 @dataclass(frozen=True, slots=True)
@@ -52,7 +54,7 @@ async def probe_many(
     *,
     concurrency: int = 8,
     timeout: float = 15.0,
-    on_progress: callable | None = None,  # type: ignore[type-arg]
+    on_progress: ProgressCallback | None = None,
 ) -> list[MediaProbe]:
     items = list(urls)
     sem = asyncio.Semaphore(concurrency)
@@ -76,8 +78,21 @@ async def probe_many(
     return [r for r in results if r is not None]
 
 
-def probe_all(urls: Iterable[str], **kwargs: object) -> list[MediaProbe]:
-    return asyncio.run(probe_many(urls, **kwargs))  # type: ignore[arg-type]
+def probe_all(
+    urls: Iterable[str],
+    *,
+    concurrency: int = 8,
+    timeout: float = 15.0,
+    on_progress: ProgressCallback | None = None,
+) -> list[MediaProbe]:
+    return asyncio.run(
+        probe_many(
+            urls,
+            concurrency=concurrency,
+            timeout=timeout,
+            on_progress=on_progress,
+        )
+    )
 
 
 def is_broken(p: MediaProbe) -> bool:

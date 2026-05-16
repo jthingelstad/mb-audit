@@ -105,7 +105,7 @@ class BarZipReader:
 
     def open_stream(self, name: str) -> io.BufferedReader:
         # Returned bytes wrapped as a BufferedReader for json.load convenience.
-        return io.BufferedReader(io.BytesIO(self.read(name)))  # type: ignore[arg-type]
+        return io.BufferedReader(io.BytesIO(self.read(name)))
 
     # ----- Internal: directory parsing -----
 
