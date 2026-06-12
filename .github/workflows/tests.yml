@@ -1,0 +1,23 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+          cache: pip
+      - run: pip install -e . pytest mypy "ruff>=0.4"
+      - name: Lint
+        run: ruff check .
+      - name: Type check
+        run: mypy src/mb_audit
+      - name: Tests
+        run: pytest tests/ -q
