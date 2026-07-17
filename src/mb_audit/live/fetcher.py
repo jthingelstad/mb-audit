@@ -4,6 +4,7 @@
 - A small disk cache keyed by URL, honoring ETag/Last-Modified.
 - Auth-header redaction in any logged output.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -107,8 +108,11 @@ class Fetcher:
     def get_json(self, url: str) -> Any:
         cr = self.get(url)
         if cr.status_code != 200:
+            request = httpx.Request("GET", url)
             raise httpx.HTTPStatusError(
-                f"GET {url} -> {cr.status_code}", request=None, response=None  # type: ignore[arg-type]
+                f"GET {url} -> {cr.status_code}",
+                request=request,
+                response=httpx.Response(cr.status_code, request=request),
             )
         return json.loads(cr.content)
 

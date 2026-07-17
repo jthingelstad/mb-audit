@@ -1,4 +1,5 @@
 """Markdown report renderer."""
+
 from __future__ import annotations
 
 from collections import Counter
@@ -10,8 +11,12 @@ from mb_audit.audit.severity import Classification, Severity
 from mb_audit.bar.models import BarInventory
 
 _SEVERITY_ORDER = [
-    Severity.CRITICAL, Severity.HIGH, Severity.MEDIUM,
-    Severity.LOW, Severity.INFO, Severity.OK,
+    Severity.CRITICAL,
+    Severity.HIGH,
+    Severity.MEDIUM,
+    Severity.LOW,
+    Severity.INFO,
+    Severity.OK,
 ]
 
 
@@ -41,9 +46,11 @@ def render_markdown(
         parts.append(f"- **BAR warnings:** {len(bar.warnings)}")
         for w in bar.warnings:
             parts.append(f"  - {w}")
-    parts.append(f"- **Run:** {started_at.isoformat(timespec='seconds')} → "
-                 f"{finished_at.isoformat(timespec='seconds')} "
-                 f"({(finished_at - started_at).total_seconds():.0f}s)")
+    parts.append(
+        f"- **Run:** {started_at.isoformat(timespec='seconds')} → "
+        f"{finished_at.isoformat(timespec='seconds')} "
+        f"({(finished_at - started_at).total_seconds():.0f}s)"
+    )
     parts.append("")
     parts.append(
         "> The BAR is the source of truth. "
@@ -65,17 +72,26 @@ def render_markdown(
     parts.append("| Classification | Count |")
     parts.append("|---|---:|")
     for c in [
-        Classification.MISSING, Classification.SITE_MISSING, Classification.API_MISSING,
-        Classification.SITE_ERROR, Classification.RELOCATED, Classification.MEDIA_BROKEN,
-        Classification.MODIFIED, Classification.FUZZY_MATCH, Classification.METADATA_DRIFT,
-        Classification.EXTRA, Classification.OK,
+        Classification.MISSING,
+        Classification.SITE_MISSING,
+        Classification.API_MISSING,
+        Classification.SITE_ERROR,
+        Classification.RELOCATED,
+        Classification.MEDIA_BROKEN,
+        Classification.MODIFIED,
+        Classification.FUZZY_MATCH,
+        Classification.METADATA_DRIFT,
+        Classification.EXTRA,
+        Classification.OK,
     ]:
         parts.append(f"| {c.value} | {by_class[c]} |")
     parts.append("")
 
     # Detail sections, only when non-empty, in severity order.
     for sev in _SEVERITY_ORDER:
-        relevant = [f for f in findings if f.severity == sev and f.classification != Classification.OK]
+        relevant = [
+            f for f in findings if f.severity == sev and f.classification != Classification.OK
+        ]
         if not relevant:
             continue
         parts.append(f"## {sev.value.title()} — {len(relevant)} finding(s)")
@@ -99,11 +115,17 @@ def render_markdown(
     if n_missing or n_relocated or n_site_missing or n_api_missing:
         parts.append("## Manton Email Summary")
         parts.append("")
-        parts.append(_manton_block(
-            bar, site_url, findings,
-            n_missing=n_missing, n_relocated=n_relocated,
-            n_site_missing=n_site_missing, n_api_missing=n_api_missing,
-        ))
+        parts.append(
+            _manton_block(
+                bar,
+                site_url,
+                findings,
+                n_missing=n_missing,
+                n_relocated=n_relocated,
+                n_site_missing=n_site_missing,
+                n_api_missing=n_api_missing,
+            )
+        )
         parts.append("")
 
     return "\n".join(parts)

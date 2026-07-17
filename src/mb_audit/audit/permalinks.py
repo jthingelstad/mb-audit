@@ -4,6 +4,7 @@ This is the second-source check against the *rendered* public site —
 independent of what the MB API says exists. A post the API knows about
 but the public site 404s on indicates a rendering/serving problem.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -18,8 +19,8 @@ ProgressCallback = Callable[[int, int], None]
 @dataclass(frozen=True, slots=True)
 class PermalinkProbe:
     url: str
-    status: int          # 0 if request errored
-    final_url: str       # after redirects
+    status: int  # 0 if request errored
+    final_url: str  # after redirects
     error: str | None = None
 
 
@@ -54,6 +55,7 @@ async def probe_many(
         timeout=timeout,
         headers={"User-Agent": "mb-audit/0.1"},
     ) as client:
+
         async def one(i: int, url: str) -> None:
             nonlocal completed
             async with sem:

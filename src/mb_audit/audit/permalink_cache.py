@@ -3,6 +3,7 @@
 Keyed by the site URL (plus a hash). Stores `{url: status}`. Repeat audits
 within the cache window can skip re-probing every URL.
 """
+
 from __future__ import annotations
 
 import hashlib

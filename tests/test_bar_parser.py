@@ -122,6 +122,7 @@ def test_not_a_bar_raises(tmp_path: Path) -> None:
 
 # ---------- Real-fixture tests (skipped if backups/ is empty) ----------
 
+
 def _bar_files() -> list[Path]:
     if not BACKUPS_DIR.exists():
         return []

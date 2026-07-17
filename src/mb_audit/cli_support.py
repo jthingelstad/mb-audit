@@ -1,4 +1,5 @@
 """Pure helpers used by the CLI command orchestration."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

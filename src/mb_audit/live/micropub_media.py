@@ -8,6 +8,7 @@ view of "which media exist" is derived from the URLs embedded in post bodies.
 This module operates over a `LiveInventory` already collected by the post
 audit and makes **zero new API calls**.
 """
+
 from __future__ import annotations
 
 import re
@@ -17,12 +18,12 @@ from mb_audit.live.inventory import LiveInventory
 
 # Same shape as bar/parser.py — keep them in lockstep.
 _MEDIA_ATTR_RE = re.compile(
-    r'''(?:src|href)\s*=\s*(?P<q>["'])(?P<url>[^"']+)(?P=q)''',
+    r"""(?:src|href)\s*=\s*(?P<q>["'])(?P<url>[^"']+)(?P=q)""",
     re.IGNORECASE,
 )
 _MEDIA_EXT_RE = re.compile(
-    r'\.(?:jpe?g|png|gif|webp|heic|mp4|m4v|mov|webm|mp3|m4a|wav|pdf)'
-    r'(?:\?.*)?$',
+    r"\.(?:jpe?g|png|gif|webp|heic|mp4|m4v|mov|webm|mp3|m4a|wav|pdf)"
+    r"(?:\?.*)?$",
     re.IGNORECASE,
 )
 
@@ -30,6 +31,7 @@ _MEDIA_EXT_RE = re.compile(
 @dataclass(frozen=True, slots=True)
 class ApiMediaIndex:
     """Reverse index: media URL -> list of post URLs that reference it."""
+
     refs: dict[str, tuple[str, ...]]
 
     @property

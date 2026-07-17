@@ -15,15 +15,15 @@ _UPLOADS_PREFIX = "uploads/"
 
 # src="..." or href="..." — single or double quoted.
 _MEDIA_ATTR_RE = re.compile(
-    r'''(?:src|href)\s*=\s*(?P<q>["'])(?P<url>[^"']+)(?P=q)''',
+    r"""(?:src|href)\s*=\s*(?P<q>["'])(?P<url>[^"']+)(?P=q)""",
     re.IGNORECASE,
 )
 
 # Heuristic: an attribute value points at media if it has an extension we
 # care about. We do not whitelist hosts — external CDNs are valid references.
 _MEDIA_EXT_RE = re.compile(
-    r'\.(?:jpe?g|png|gif|webp|heic|mp4|m4v|mov|webm|mp3|m4a|wav|pdf)'
-    r'(?:\?.*)?$',
+    r"\.(?:jpe?g|png|gif|webp|heic|mp4|m4v|mov|webm|mp3|m4a|wav|pdf)"
+    r"(?:\?.*)?$",
     re.IGNORECASE,
 )
 
@@ -60,9 +60,7 @@ def parse_bar(path: Path) -> BarInventory:
             raise ValueError(f"{path}: feed.json 'items' is not an array")
 
         if len(items) == 0:
-            warnings.append(
-                "feed.json has zero items — BAR may be empty or malformed"
-            )
+            warnings.append("feed.json has zero items — BAR may be empty or malformed")
 
         home_page_url = str(feed.get("home_page_url") or "")
         feed_title = str(feed.get("title") or "")

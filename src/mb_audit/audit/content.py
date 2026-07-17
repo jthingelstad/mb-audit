@@ -5,6 +5,7 @@ selectolax, normalize whitespace, and compare lengths and a normalized
 prefix. Anything more sophisticated (per-paragraph diff, image-tag
 sensitivity) is layered on later.
 """
+
 from __future__ import annotations
 
 import re
@@ -12,7 +13,7 @@ import re
 from selectolax.parser import HTMLParser
 
 _WS_RE = re.compile(r"\s+")
-_LENGTH_TOLERANCE = 0.05    # 5% length delta is "the same"
+_LENGTH_TOLERANCE = 0.05  # 5% length delta is "the same"
 _PREFIX_LEN = 1500
 
 

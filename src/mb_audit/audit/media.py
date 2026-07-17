@@ -1,4 +1,5 @@
 """Media reachability checks via concurrent HEAD requests."""
+
 from __future__ import annotations
 
 import asyncio
@@ -13,9 +14,9 @@ ProgressCallback = Callable[[int, int], None]
 @dataclass(frozen=True, slots=True)
 class MediaProbe:
     url: str
-    status: int          # 0 if request errored
+    status: int  # 0 if request errored
     error: str | None
-    final_url: str       # after redirects, when known
+    final_url: str  # after redirects, when known
     size: int | None = None  # Content-Length from HEAD, when present
 
 
@@ -66,6 +67,7 @@ async def probe_many(
         timeout=timeout,
         headers={"User-Agent": "mb-audit/0.1"},
     ) as client:
+
         async def one(i: int, url: str) -> None:
             nonlocal completed
             async with sem:

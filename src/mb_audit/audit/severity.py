@@ -1,4 +1,5 @@
 """Classification kinds and their severities."""
+
 from __future__ import annotations
 
 from enum import Enum
@@ -15,10 +16,10 @@ class Severity(str, Enum):
 
 class Classification(str, Enum):
     OK = "ok"
-    MISSING = "missing"               # API and site both can't find it
-    SITE_MISSING = "site_missing"     # API has it, public site 404s
-    API_MISSING = "api_missing"       # site renders it, API doesn't return it
-    SITE_ERROR = "site_error"         # public site returned 5xx / connection error
+    MISSING = "missing"  # API and site both can't find it
+    SITE_MISSING = "site_missing"  # API has it, public site 404s
+    API_MISSING = "api_missing"  # site renders it, API doesn't return it
+    SITE_ERROR = "site_error"  # public site returned 5xx / connection error
     RELOCATED = "relocated"
     MEDIA_BROKEN = "media_broken"
     MODIFIED = "modified"
@@ -48,13 +49,13 @@ def severity_of(c: Classification) -> Severity:
 
 class MediaClassification(str, Enum):
     OK = "media_ok"
-    MISSING = "media_missing"                       # site 404 + no API post references it
-    SITE_MISSING = "media_site_missing"             # site 404, API post still references it
-    ORPHAN_PRESENT = "media_orphan_present"         # site 200, no API post references it
-    SIZE_MISMATCH = "media_size_mismatch"           # both 200, Content-Length differs
-    SITE_ERROR = "media_site_error"                 # 5xx / connection error
-    ORPHAN_REFERENCED = "media_orphan_referenced"   # post points at uploads/X but X not in BAR
-    EXTERNAL_BROKEN = "media_external_broken"       # external CDN URL 404s
+    MISSING = "media_missing"  # site 404 + no API post references it
+    SITE_MISSING = "media_site_missing"  # site 404, API post still references it
+    ORPHAN_PRESENT = "media_orphan_present"  # site 200, no API post references it
+    SIZE_MISMATCH = "media_size_mismatch"  # both 200, Content-Length differs
+    SITE_ERROR = "media_site_error"  # 5xx / connection error
+    ORPHAN_REFERENCED = "media_orphan_referenced"  # post points at uploads/X but X not in BAR
+    EXTERNAL_BROKEN = "media_external_broken"  # external CDN URL 404s
 
 
 _MEDIA_SEVERITY: dict[MediaClassification, Severity] = {

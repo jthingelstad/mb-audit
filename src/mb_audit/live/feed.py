@@ -5,6 +5,7 @@ Used as a *secondary* source. Micro.blog exposes only a recent slice
 cross-checking that posts the API knows about are actually rendered to
 the public site.
 """
+
 from __future__ import annotations
 
 from datetime import datetime

@@ -31,6 +31,7 @@ Response shape (MF2 JSON):
 
 Some servers wrap a single result as `{"items": [<entry>]}`; we accept both.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -66,6 +67,7 @@ class PerUrlLookup:
 
 # ---------- Single-URL lookup (the workhorse) ----------
 
+
 async def lookup_post(
     client: httpx.AsyncClient,
     post_url: str,
@@ -84,12 +86,12 @@ async def lookup_post(
     if r.status_code == 404:
         return PerUrlLookup(post_url, None, status=404)
     if r.status_code == 401 or r.status_code == 403:
-        raise MicropubError(
-            f"Micropub auth failed ({r.status_code}). Check MICROBLOG_TOKEN."
-        )
+        raise MicropubError(f"Micropub auth failed ({r.status_code}). Check MICROBLOG_TOKEN.")
     if r.status_code != 200:
         return PerUrlLookup(
-            post_url, None, status=r.status_code,
+            post_url,
+            None,
+            status=r.status_code,
             error=f"unexpected status {r.status_code}",
         )
 
@@ -120,6 +122,7 @@ async def lookup_many(
     completed = 0
 
     async with httpx.AsyncClient(headers=headers, timeout=30.0) as client:
+
         async def one(i: int, url: str) -> None:
             nonlocal completed
             async with sem:
@@ -135,14 +138,13 @@ async def lookup_many(
 
 # ---------- Optional bulk pagination ----------
 
+
 def fetch_config(token: str, endpoint: str = DEFAULT_MICROPUB_ENDPOINT) -> dict[str, Any]:
     """GET ?q=config — destinations, post types, media endpoint."""
     with httpx.Client(headers=_auth_headers(token), timeout=30.0) as client:
         r = client.get(endpoint, params={"q": "config"})
         if r.status_code in (401, 403):
-            raise MicropubError(
-                f"Micropub auth failed ({r.status_code}). Check MICROBLOG_TOKEN."
-            )
+            raise MicropubError(f"Micropub auth failed ({r.status_code}). Check MICROBLOG_TOKEN.")
         r.raise_for_status()
         payload = r.json()
         if not isinstance(payload, dict):
@@ -194,7 +196,9 @@ def fetch_full_inventory(
     with httpx.Client(headers=headers, timeout=60.0) as client:
         for page_idx in range(max_pages):
             params: dict[str, Any] = {
-                "q": "source", "offset": offset, "limit": page_size,
+                "q": "source",
+                "offset": offset,
+                "limit": page_size,
             }
             if mp_destination:
                 params["mp-destination"] = mp_destination
@@ -230,6 +234,7 @@ def fetch_full_inventory(
 
 
 # ---------- Helpers ----------
+
 
 def _auth_headers(token: str) -> dict[str, str]:
     return {

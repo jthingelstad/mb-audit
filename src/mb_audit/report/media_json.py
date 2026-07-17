@@ -1,4 +1,5 @@
 """Stable-key JSON export for media findings."""
+
 from __future__ import annotations
 
 import json

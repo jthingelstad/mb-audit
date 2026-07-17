@@ -10,6 +10,7 @@ Order:
   6. content_hash    — first ~500 chars of content hashed against inventory
   7. fuzzy           — rapidfuzz over content_text against inventory
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -17,14 +18,13 @@ from dataclasses import dataclass
 from datetime import timedelta
 from enum import Enum
 
+import httpx
 from rapidfuzz import fuzz
 
 from mb_audit.bar.models import Post
 from mb_audit.live.inventory import LiveInventory, LiveItem
 from mb_audit.live.micropub import PerUrlLookup
 from mb_audit.live.permalink import head_permalink
-
-import httpx
 
 
 class Strategy(str, Enum):
@@ -45,9 +45,9 @@ class ResolutionResult:
     found_url: str | None
     final_url: str | None
     strategy: Strategy
-    micropub_status: int | None       # status returned by the Micropub lookup, if any
-    permalink_status: int | None      # status returned by HEAD, if attempted
-    matched_item: LiveItem | None     # the live item we matched (for downstream content/media checks)
+    micropub_status: int | None  # status returned by the Micropub lookup, if any
+    permalink_status: int | None  # status returned by HEAD, if attempted
+    matched_item: LiveItem | None  # the live item we matched (for downstream content/media checks)
     note: str = ""
 
 
@@ -120,23 +120,41 @@ def resolve(
             if li.date_published is None:
                 continue
             if abs(li.date_published - post.date_published) <= timedelta(days=2):
-                return _hit(post, li, Strategy.SLUG_DATE, micropub_status, perma_status,
-                            note=f"slug match in {inv.source.value} ±2d")
+                return _hit(
+                    post,
+                    li,
+                    Strategy.SLUG_DATE,
+                    micropub_status,
+                    perma_status,
+                    note=f"slug match in {inv.source.value} ±2d",
+                )
 
         # 5. Title
         if post.is_long_form and post.title:
             wanted = post.title.strip()
             for li in inv.items:
                 if li.title and li.title.strip() == wanted:
-                    return _hit(post, li, Strategy.TITLE, micropub_status, perma_status,
-                                note=f"title match in {inv.source.value}")
+                    return _hit(
+                        post,
+                        li,
+                        Strategy.TITLE,
+                        micropub_status,
+                        perma_status,
+                        note=f"title match in {inv.source.value}",
+                    )
 
         # 6. Content hash
         if target_hash:
             for li in inv.items:
                 if _content_hash(li.content_text) == target_hash:
-                    return _hit(post, li, Strategy.CONTENT_HASH, micropub_status, perma_status,
-                                note=f"content-hash match in {inv.source.value}")
+                    return _hit(
+                        post,
+                        li,
+                        Strategy.CONTENT_HASH,
+                        micropub_status,
+                        perma_status,
+                        note=f"content-hash match in {inv.source.value}",
+                    )
 
         # 7. Fuzzy
         if target_prefix:
@@ -150,8 +168,14 @@ def resolve(
                     best_score = score
                     best_item = li
             if best_item is not None and best_score >= fuzzy_threshold:
-                return _hit(post, best_item, Strategy.FUZZY, micropub_status, perma_status,
-                            note=f"fuzzy {best_score:.2f} in {inv.source.value}")
+                return _hit(
+                    post,
+                    best_item,
+                    Strategy.FUZZY,
+                    micropub_status,
+                    perma_status,
+                    note=f"fuzzy {best_score:.2f} in {inv.source.value}",
+                )
 
     return ResolutionResult(
         post_id=post.id,

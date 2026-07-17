@@ -29,14 +29,14 @@ class Post:
 
 @dataclass(frozen=True, slots=True)
 class MediaAsset:
-    path: str            # path inside the BAR, e.g. "uploads/2023/02872be889.jpg"
+    path: str  # path inside the BAR, e.g. "uploads/2023/02872be889.jpg"
     size_bytes: int
 
 
 @dataclass(frozen=True, slots=True)
 class BarInventory:
     source_path: Path
-    host: str            # derived from feed home_page_url
+    host: str  # derived from feed home_page_url
     home_page_url: str
     feed_title: str
     posts: tuple[Post, ...]

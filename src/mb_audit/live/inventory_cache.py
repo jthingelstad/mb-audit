@@ -8,6 +8,7 @@ trust the cache file's permissions (user-only by default).
 Cached inventories are tagged with a fetched_at timestamp; the caller
 decides whether they're fresh enough.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -38,9 +39,7 @@ def save(
     mp_destination: str | None,
     cache_root: Path = DEFAULT_CACHE_ROOT,
 ) -> Path:
-    path = cache_path(
-        endpoint=endpoint, mp_destination=mp_destination, cache_root=cache_root
-    )
+    path = cache_path(endpoint=endpoint, mp_destination=mp_destination, cache_root=cache_root)
     path.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         "fetched_at": datetime.now().astimezone().isoformat(),
@@ -71,9 +70,7 @@ def load(
     mp_destination: str | None,
     cache_root: Path = DEFAULT_CACHE_ROOT,
 ) -> tuple[LiveInventory, datetime] | None:
-    path = cache_path(
-        endpoint=endpoint, mp_destination=mp_destination, cache_root=cache_root
-    )
+    path = cache_path(endpoint=endpoint, mp_destination=mp_destination, cache_root=cache_root)
     if not path.exists():
         return None
     try:

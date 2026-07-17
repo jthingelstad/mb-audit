@@ -1,4 +1,5 @@
 """Reconcile BAR inventory against live state, producing Findings."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -62,55 +63,75 @@ def _classify_one(
     site_status = permalink_status.get(post.url)
     site_present = site_status is not None and 200 <= site_status < 400
     site_404 = site_status == 404
-    site_error = site_status is not None and (
-        site_status == 0 or 500 <= site_status < 600
-    )
+    site_error = site_status is not None and (site_status == 0 or 500 <= site_status < 600)
 
     # Both sources agree it's gone
     if not api_found and site_404:
-        return _make(post, res, Classification.MISSING,
-                    note=f"absent in MB API and live site (site={site_status})",
-                    evidence={
-                        "micropub_status": res.micropub_status,
-                        "permalink_status": site_status,
-                    })
+        return _make(
+            post,
+            res,
+            Classification.MISSING,
+            note=f"absent in MB API and live site (site={site_status})",
+            evidence={
+                "micropub_status": res.micropub_status,
+                "permalink_status": site_status,
+            },
+        )
 
     # API says no, site says yes — API/index issue
     if not api_found and site_present:
-        return _make(post, res, Classification.API_MISSING,
-                    note=f"live site has it ({site_status}) but MB API does not",
-                    evidence={"permalink_status": site_status})
+        return _make(
+            post,
+            res,
+            Classification.API_MISSING,
+            note=f"live site has it ({site_status}) but MB API does not",
+            evidence={"permalink_status": site_status},
+        )
 
     # API says no, site error/unknown — degrade to MISSING but flag the uncertainty
     if not api_found:
-        return _make(post, res, Classification.MISSING,
-                    note=_missing_note(res) + (f" site={site_status}" if site_status is not None else ""),
-                    evidence={
-                        "micropub_status": res.micropub_status,
-                        "permalink_status": site_status,
-                    })
+        return _make(
+            post,
+            res,
+            Classification.MISSING,
+            note=_missing_note(res) + (f" site={site_status}" if site_status is not None else ""),
+            evidence={
+                "micropub_status": res.micropub_status,
+                "permalink_status": site_status,
+            },
+        )
 
     found_url = res.found_url
     assert found_url is not None
 
     # API found it — now check what the site says
     if site_404:
-        return _make(post, res, Classification.SITE_MISSING,
-                    note="MB API has the post but the public site returns 404",
-                    evidence={"permalink_status": site_status})
+        return _make(
+            post,
+            res,
+            Classification.SITE_MISSING,
+            note="MB API has the post but the public site returns 404",
+            evidence={"permalink_status": site_status},
+        )
     if site_error:
-        return _make(post, res, Classification.SITE_ERROR,
-                    note=f"public site error: status={site_status}",
-                    evidence={"permalink_status": site_status})
+        return _make(
+            post,
+            res,
+            Classification.SITE_ERROR,
+            note=f"public site error: status={site_status}",
+            evidence={"permalink_status": site_status},
+        )
 
     # Resolved. Now classify drift.
     if res.strategy == Strategy.FUZZY:
-        return _make(post, res, Classification.FUZZY_MATCH,
-                    note=res.note or "matched only via fuzzy")
+        return _make(
+            post, res, Classification.FUZZY_MATCH, note=res.note or "matched only via fuzzy"
+        )
 
     if _is_relocated(post.url, found_url):
-        return _make(post, res, Classification.RELOCATED,
-                    note=f"BAR url={post.url} live url={found_url}")
+        return _make(
+            post, res, Classification.RELOCATED, note=f"BAR url={post.url} live url={found_url}"
+        )
 
     # Content drift (only when we can compare against live content)
     if res.matched_item is not None and res.matched_item.content_html:
@@ -121,20 +142,32 @@ def _classify_one(
     # Media broken?
     broken = _broken_media(post, media_status)
     if broken:
-        return _make(post, res, Classification.MEDIA_BROKEN,
-                    note=f"{len(broken)} media URL(s) unreachable",
-                    evidence={"broken_urls": broken[:10]})
+        return _make(
+            post,
+            res,
+            Classification.MEDIA_BROKEN,
+            note=f"{len(broken)} media URL(s) unreachable",
+            evidence={"broken_urls": broken[:10]},
+        )
 
     # Host drift (BAR url and live url share the same path but the host changed)
     if _has_host_drift(post.url, found_url):
-        return _make(post, res, Classification.METADATA_DRIFT,
-                    note=f"host drift: BAR={post.url} live={found_url}")
+        return _make(
+            post,
+            res,
+            Classification.METADATA_DRIFT,
+            note=f"host drift: BAR={post.url} live={found_url}",
+        )
 
     # Tag drift
     if res.matched_item is not None:
         if tuple(sorted(post.tags)) != tuple(sorted(res.matched_item.tags)):
-            return _make(post, res, Classification.METADATA_DRIFT,
-                        note=f"tags differ: bar={list(post.tags)} live={list(res.matched_item.tags)}")
+            return _make(
+                post,
+                res,
+                Classification.METADATA_DRIFT,
+                note=f"tags differ: bar={list(post.tags)} live={list(res.matched_item.tags)}",
+            )
 
     return _make(post, res, Classification.OK, note=res.note)
 
@@ -157,6 +190,7 @@ def _is_relocated(expected_url: str, found_url: str) -> bool:
         return False
     # Same path, different host = host drift (metadata), not a real relocation.
     from urllib.parse import urlparse
+
     if urlparse(expected_url).path == urlparse(found_url).path:
         return False
     return True
@@ -166,6 +200,7 @@ def _has_host_drift(expected_url: str, found_url: str) -> bool:
     if not expected_url or not found_url:
         return False
     from urllib.parse import urlparse
+
     a, b = urlparse(expected_url), urlparse(found_url)
     return a.path == b.path and a.netloc != b.netloc
 

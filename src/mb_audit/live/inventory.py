@@ -4,6 +4,7 @@
 Both the Micropub q=source collector and the public JSON Feed collector
 populate the same types.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -13,9 +14,9 @@ from urllib.parse import urlparse
 
 
 class LiveSource(str, Enum):
-    MICROPUB = "micropub"   # authoritative — comes from MB API q=source
-    FEED = "feed"           # public JSON feed
-    PERMALINK = "permalink" # fetched via direct HTML GET
+    MICROPUB = "micropub"  # authoritative — comes from MB API q=source
+    FEED = "feed"  # public JSON feed
+    PERMALINK = "permalink"  # fetched via direct HTML GET
 
 
 @dataclass(frozen=True, slots=True)
@@ -25,7 +26,7 @@ class LiveItem:
     title: str | None
     date_published: datetime | None
     content_html: str
-    content_text: str       # markdown source when MICROPUB; rendered text otherwise
+    content_text: str  # markdown source when MICROPUB; rendered text otherwise
     tags: tuple[str, ...]
     source: LiveSource
 
@@ -41,8 +42,14 @@ class LiveInventory:
     """
 
     __slots__ = (
-        "source", "home_page_url", "items", "is_complete",
-        "_by_id", "_by_url", "_by_path", "_by_slug",
+        "source",
+        "home_page_url",
+        "items",
+        "is_complete",
+        "_by_id",
+        "_by_url",
+        "_by_path",
+        "_by_slug",
     )
 
     def __init__(

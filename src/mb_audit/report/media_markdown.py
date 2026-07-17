@@ -1,4 +1,5 @@
 """Markdown renderer for media-audit findings."""
+
 from __future__ import annotations
 
 from collections import Counter
@@ -9,8 +10,12 @@ from mb_audit.audit.severity import MediaClassification, Severity
 from mb_audit.bar.models import BarInventory
 
 _SEVERITY_ORDER = [
-    Severity.CRITICAL, Severity.HIGH, Severity.MEDIUM,
-    Severity.LOW, Severity.INFO, Severity.OK,
+    Severity.CRITICAL,
+    Severity.HIGH,
+    Severity.MEDIUM,
+    Severity.LOW,
+    Severity.INFO,
+    Severity.OK,
 ]
 
 _CLASS_ORDER = [
@@ -45,14 +50,18 @@ def render_media_markdown(
     parts.append(f"- **Site:** {site_url or '(none)'}")
     parts.append(f"- **BAR media files:** {bar.media_count}")
     parts.append(f"- **Total media findings:** {total}")
-    parts.append(f"- **Run:** {started_at.isoformat(timespec='seconds')} → "
-                 f"{finished_at.isoformat(timespec='seconds')} "
-                 f"({(finished_at - started_at).total_seconds():.0f}s)")
+    parts.append(
+        f"- **Run:** {started_at.isoformat(timespec='seconds')} → "
+        f"{finished_at.isoformat(timespec='seconds')} "
+        f"({(finished_at - started_at).total_seconds():.0f}s)"
+    )
     parts.append("")
-    parts.append("> The BAR's `uploads/` directory is the source of truth. "
-                 "**`media_missing`** (BAR has the file, site 404s, no API post references it) "
-                 "is the headline finding. **`media_site_missing`** indicates a rendering issue: "
-                 "API still references the file, but the public URL 404s.")
+    parts.append(
+        "> The BAR's `uploads/` directory is the source of truth. "
+        "**`media_missing`** (BAR has the file, site 404s, no API post references it) "
+        "is the headline finding. **`media_site_missing`** indicates a rendering issue: "
+        "API still references the file, but the public URL 404s."
+    )
     parts.append("")
 
     parts.append("## Summary")
@@ -70,8 +79,9 @@ def render_media_markdown(
     parts.append("")
 
     for sev in _SEVERITY_ORDER:
-        relevant = [f for f in findings
-                    if f.severity == sev and f.classification != MediaClassification.OK]
+        relevant = [
+            f for f in findings if f.severity == sev and f.classification != MediaClassification.OK
+        ]
         if not relevant:
             continue
         parts.append(f"## {sev.value.title()} — {len(relevant)} finding(s)")
@@ -81,8 +91,10 @@ def render_media_markdown(
             if f.bar_path:
                 parts.append(f"  - bar path: `{f.bar_path}`")
             if f.live_status is not None:
-                parts.append(f"  - live status: `{f.live_status}`"
-                             + (f", live size: {f.live_size}" if f.live_size is not None else ""))
+                parts.append(
+                    f"  - live status: `{f.live_status}`"
+                    + (f", live size: {f.live_size}" if f.live_size is not None else "")
+                )
             if f.bar_size is not None:
                 parts.append(f"  - bar size: {f.bar_size}")
             if f.note:
@@ -99,15 +111,23 @@ def render_media_markdown(
     if n_missing or n_site_missing or n_orphan_ref:
         parts.append("## Manton Email Summary (media)")
         parts.append("")
-        parts.append(f"`mb-audit verify-media` against `{site_url}` using BAR "
-                     f"`{bar.source_path.name}` ({bar.media_count} media files):")
+        parts.append(
+            f"`mb-audit verify-media` against `{site_url}` using BAR "
+            f"`{bar.source_path.name}` ({bar.media_count} media files):"
+        )
         parts.append("")
-        parts.append(f"- **{n_missing} media_missing** (BAR has the file, site 404s, "
-                     f"no live post references it)")
-        parts.append(f"- **{n_site_missing} media_site_missing** (BAR has the file, site 404s, "
-                     f"a live post still references it — rendering issue)")
-        parts.append(f"- **{n_orphan_ref} media_orphan_referenced** (post URL points at "
-                     f"uploads/X but X is absent from the BAR archive)")
+        parts.append(
+            f"- **{n_missing} media_missing** (BAR has the file, site 404s, "
+            f"no live post references it)"
+        )
+        parts.append(
+            f"- **{n_site_missing} media_site_missing** (BAR has the file, site 404s, "
+            f"a live post still references it — rendering issue)"
+        )
+        parts.append(
+            f"- **{n_orphan_ref} media_orphan_referenced** (post URL points at "
+            f"uploads/X but X is absent from the BAR archive)"
+        )
         parts.append("")
 
     return "\n".join(parts)

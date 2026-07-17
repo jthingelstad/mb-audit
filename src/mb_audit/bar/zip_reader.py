@@ -16,6 +16,7 @@ Only the subset of ZIP that BARs actually use is supported:
 - filenames in ASCII / UTF-8
 - both regular and ZIP64-extra-field offsets in CD entries (read if present)
 """
+
 from __future__ import annotations
 
 import io
@@ -140,9 +141,7 @@ class BarZipReader:
         self._fp.seek(cd_off_real)
         cd = self._fp.read(cd_size_real)
         if len(cd) != cd_size_real:
-            raise BarZipError(
-                f"truncated central directory: wanted {cd_size_real}, got {len(cd)}"
-            )
+            raise BarZipError(f"truncated central directory: wanted {cd_size_real}, got {len(cd)}")
 
         pos = 0
         seen = 0
@@ -173,15 +172,11 @@ class BarZipReader:
             ) = struct.unpack("<IHHHHHHIIIHHHHHII", cd[pos : pos + 46])
 
             name_b = cd[pos + 46 : pos + 46 + fname_len]
-            extra_b = cd[
-                pos + 46 + fname_len : pos + 46 + fname_len + extra_len
-            ]
+            extra_b = cd[pos + 46 + fname_len : pos + 46 + fname_len + extra_len]
 
             # ZIP64 extra-field overrides for any sentinel values.
             if csize == _UINT32_MAX or usize == _UINT32_MAX or local_off == _UINT32_MAX:
-                csize, usize, local_off = self._apply_zip64_extra(
-                    extra_b, csize, usize, local_off
-                )
+                csize, usize, local_off = self._apply_zip64_extra(extra_b, csize, usize, local_off)
 
             name = name_b.decode("utf-8", errors="replace")
             self._entries[name] = ZipEntry(
@@ -275,8 +270,7 @@ class BarZipReader:
         head = self._fp.read(30)
         if len(head) < 30 or head[:4] != _LOCAL_FILE_SIG:
             raise BarZipError(
-                f"bad local header for {entry.name!r} at offset "
-                f"{entry.local_header_offset}"
+                f"bad local header for {entry.name!r} at offset {entry.local_header_offset}"
             )
         fname_len, extra_len = struct.unpack("<HH", head[26:30])
         # Skip filename + extra

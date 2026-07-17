@@ -17,7 +17,6 @@ __pycache__/
 
 # uv / venv
 .venv/
-.python-version
 
 # Build artifacts
 build/

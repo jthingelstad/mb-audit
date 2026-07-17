@@ -75,9 +75,7 @@ def test_build_media_probe_targets_splits_archive_internal_and_external() -> Non
 
 def test_build_media_probe_targets_can_skip_external_urls() -> None:
     external = "https://cdn.example.com/clip.mp4"
-    inventory = make_inventory(
-        posts=(make_post("https://example.com/1.html", (external,)),)
-    )
+    inventory = make_inventory(posts=(make_post("https://example.com/1.html", (external,)),))
 
     targets = build_media_probe_targets(inventory, include_external=False)
 

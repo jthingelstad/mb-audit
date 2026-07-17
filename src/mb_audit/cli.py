@@ -1,4 +1,5 @@
 """mb-audit CLI."""
+
 from __future__ import annotations
 
 import asyncio
@@ -22,7 +23,8 @@ from rich.progress import (
 from rich.table import Table
 
 from mb_audit.audit import media_cache, permalink_cache
-from mb_audit.audit.media import MediaProbe, probe_all, probe_many as media_probe_many
+from mb_audit.audit.media import MediaProbe, probe_all
+from mb_audit.audit.media import probe_many as media_probe_many
 from mb_audit.audit.media_reconciler import MediaFinding, reconcile_media
 from mb_audit.audit.permalinks import probe_many as permalink_probe_many
 from mb_audit.audit.reconciler import Finding, reconcile
@@ -35,10 +37,10 @@ from mb_audit.cli_support import (
     slice_inventory,
     unique_media_urls,
 )
+from mb_audit.live import inventory_cache
 from mb_audit.live.feed import fetch_feed_inventory
 from mb_audit.live.fetcher import Fetcher
 from mb_audit.live.inventory import LiveInventory
-from mb_audit.live import inventory_cache
 from mb_audit.live.micropub import (
     DEFAULT_MICROPUB_ENDPOINT,
     fetch_config,
@@ -61,10 +63,12 @@ TOKEN_ENV = "MICROBLOG_TOKEN"
 
 # ---------------- inspect ----------------
 
+
 @app.command()
 def inspect(
-    bar: Path = typer.Argument(..., exists=True, dir_okay=False, readable=True,
-                               help="Path to a BAR backup file."),
+    bar: Path = typer.Argument(
+        ..., exists=True, dir_okay=False, readable=True, help="Path to a BAR backup file."
+    ),
 ) -> None:
     """Parse a BAR and print a summary."""
     inv = parse_bar(bar)
@@ -93,37 +97,57 @@ def _print_inventory_table(inv: BarInventory) -> None:
 
 # ---------------- verify ----------------
 
+
 @app.command()
 def verify(
-    bar: Path = typer.Option(..., "--bar", exists=True, dir_okay=False, readable=True,
-                             help="Path to a BAR backup file."),
-    site: Optional[str] = typer.Option(None, "--site",
-                                       help="Public site URL for the second-source permalink audit. "
-                                            "Defaults to the BAR's home_page_url. Pass '' to disable."),
-    site_concurrency: int = typer.Option(8, "--site-concurrency", min=1, max=32,
-                                          help="Concurrent HEAD requests against the public site."),
-    site_refresh: bool = typer.Option(False, "--site-refresh",
-                                       help="Bypass cached permalink probes and re-fetch."),
+    bar: Path = typer.Option(
+        ..., "--bar", exists=True, dir_okay=False, readable=True, help="Path to a BAR backup file."
+    ),
+    site: Optional[str] = typer.Option(
+        None,
+        "--site",
+        help="Public site URL for the second-source permalink audit. "
+        "Defaults to the BAR's home_page_url. Pass '' to disable.",
+    ),
+    site_concurrency: int = typer.Option(
+        8,
+        "--site-concurrency",
+        min=1,
+        max=32,
+        help="Concurrent HEAD requests against the public site.",
+    ),
+    site_refresh: bool = typer.Option(
+        False, "--site-refresh", help="Bypass cached permalink probes and re-fetch."
+    ),
     micropub_endpoint: str = typer.Option(DEFAULT_MICROPUB_ENDPOINT, "--micropub-endpoint"),
     mp_destination: Optional[str] = typer.Option(
-        None, "--mp-destination",
+        None,
+        "--mp-destination",
         help="Filter Micropub q=source by destination uid. Auto-detected from BAR if omitted.",
     ),
-    page_size: int = typer.Option(200, "--page-size", min=1, max=200,
-                                  help="Items per Micropub q=source page."),
+    page_size: int = typer.Option(
+        200, "--page-size", min=1, max=200, help="Items per Micropub q=source page."
+    ),
     page_delay: float = typer.Option(
-        0.5, "--page-delay", min=0.0,
+        0.5,
+        "--page-delay",
+        min=0.0,
         help="Seconds to wait between Micropub paginated requests (politeness).",
     ),
     refresh: bool = typer.Option(
-        False, "--refresh",
+        False,
+        "--refresh",
         help="Bypass the cached Micropub inventory and re-fetch.",
     ),
-    media_check: bool = typer.Option(False, "--media-check/--no-media-check",
-                                     help="Probe every media URL referenced in the BAR. Slow."),
+    media_check: bool = typer.Option(
+        False,
+        "--media-check/--no-media-check",
+        help="Probe every media URL referenced in the BAR. Slow.",
+    ),
     media_concurrency: int = typer.Option(8, "--media-concurrency", min=1, max=64),
-    limit: Optional[int] = typer.Option(None, "--limit", min=1,
-                                        help="For dev: only audit the first N posts."),
+    limit: Optional[int] = typer.Option(
+        None, "--limit", min=1, help="For dev: only audit the first N posts."
+    ),
 ) -> None:
     """Audit a BAR against the Micro.blog API (and optionally the live site)."""
     token = os.environ.get(TOKEN_ENV, "").strip()
@@ -154,16 +178,19 @@ def verify(
             cfg = {}
         mp_destination = pick_destination_uid(cfg, inv.home_page_url)
         if mp_destination:
-            console.print(f"Resolved mp-destination: [cyan]{mp_destination}[/cyan] "
-                          f"(from BAR host {inv.host})")
+            console.print(
+                f"Resolved mp-destination: [cyan]{mp_destination}[/cyan] (from BAR host {inv.host})"
+            )
         else:
             console.print(
                 "[yellow]No Micropub destination matched the BAR host — "
                 "querying across all blogs (may produce noisy 'relocated' results).[/yellow]"
             )
 
-    cached = None if refresh else inventory_cache.load(
-        endpoint=micropub_endpoint, mp_destination=mp_destination
+    cached = (
+        None
+        if refresh
+        else inventory_cache.load(endpoint=micropub_endpoint, mp_destination=mp_destination)
     )
     if cached:
         mb_inventory, fetched_at = cached
@@ -224,8 +251,9 @@ def verify(
     media_status: dict[str, int] = {}
     if media_check:
         all_media = unique_media_urls(posts)
-        console.print(f"[bold]Probing {len(all_media)} media URL(s)[/bold] "
-                      f"(concurrency={media_concurrency})")
+        console.print(
+            f"[bold]Probing {len(all_media)} media URL(s)[/bold] (concurrency={media_concurrency})"
+        )
         probes = probe_all(all_media, concurrency=media_concurrency)
         media_status = {p.url: p.status for p in probes}
 
@@ -269,10 +297,22 @@ def verify(
     _print_summary(findings, started, finished)
 
     run_id = _make_run_id(bar, started)
-    md = render_markdown(bar_for_reconcile, effective_site, findings,
-                         run_id=run_id, started_at=started, finished_at=finished)
-    js = render_json(bar_for_reconcile, effective_site, findings,
-                     run_id=run_id, started_at=started, finished_at=finished)
+    md = render_markdown(
+        bar_for_reconcile,
+        effective_site,
+        findings,
+        run_id=run_id,
+        started_at=started,
+        finished_at=finished,
+    )
+    js = render_json(
+        bar_for_reconcile,
+        effective_site,
+        findings,
+        run_id=run_id,
+        started_at=started,
+        finished_at=finished,
+    )
     out_dir = REPORTS_ROOT / run_id
     md_path, js_path = write_report(out_dir, markdown=md, json_blob=js)
     console.print(f"[green]Wrote report:[/green] {md_path}")
@@ -373,6 +413,7 @@ def _gather_permalink_status(
         # Persist merged cache (keep stale entries for URLs we didn't re-probe).
         merged = []
         from mb_audit.audit.permalinks import PermalinkProbe
+
         for url, status in cached_pairs.items():
             if url not in new_probes_by_url:
                 merged.append(PermalinkProbe(url=url, status=status, final_url=url))
@@ -384,14 +425,23 @@ def _gather_permalink_status(
 
 def _print_summary(findings: list[Finding], started: datetime, finished: datetime) -> None:
     from collections import Counter
+
     by_class = Counter(f.classification.value for f in findings)
     t = Table(title="Summary", show_header=True, header_style="bold")
     t.add_column("classification")
     t.add_column("count", justify="right")
     for c in [
-        "missing", "site_missing", "api_missing", "site_error",
-        "relocated", "media_broken", "modified",
-        "fuzzy_match", "metadata_drift", "extra", "ok",
+        "missing",
+        "site_missing",
+        "api_missing",
+        "site_error",
+        "relocated",
+        "media_broken",
+        "modified",
+        "fuzzy_match",
+        "metadata_drift",
+        "extra",
+        "ok",
     ]:
         t.add_row(c, str(by_class.get(c, 0)))
     console.print(t)
@@ -401,36 +451,43 @@ def _print_summary(findings: list[Finding], started: datetime, finished: datetim
 def _make_run_id(bar: Path, started: datetime) -> str:
     h = hashlib.sha256()
     with bar.open("rb") as f:
-        h.update(f.read(1 << 20))     # first 1 MB is enough to fingerprint a BAR
+        h.update(f.read(1 << 20))  # first 1 MB is enough to fingerprint a BAR
     return f"{started.strftime('%Y%m%dT%H%M%S')}-{h.hexdigest()[:8]}"
 
 
 # ---------------- verify-media ----------------
 
+
 @app.command("verify-media")
 def verify_media(
     bar: Path = typer.Option(..., "--bar", exists=True, dir_okay=False, readable=True),
     site: Optional[str] = typer.Option(
-        None, "--site",
+        None,
+        "--site",
         help="Public site URL (e.g. https://example.com). Defaults to the BAR's home_page_url. Pass '' to disable site probing.",
     ),
     micropub_endpoint: str = typer.Option(DEFAULT_MICROPUB_ENDPOINT, "--micropub-endpoint"),
     mp_destination: Optional[str] = typer.Option(
-        None, "--mp-destination",
+        None,
+        "--mp-destination",
         help="Filter MB API by destination uid. Auto-detected from BAR if omitted.",
     ),
-    concurrency: int = typer.Option(8, "--concurrency", min=1, max=32,
-                                    help="Concurrent HEAD requests against the public site."),
+    concurrency: int = typer.Option(
+        8, "--concurrency", min=1, max=32, help="Concurrent HEAD requests against the public site."
+    ),
     media_refresh: bool = typer.Option(
-        False, "--media-refresh",
+        False,
+        "--media-refresh",
         help="Bypass cached media probes and re-fetch.",
     ),
     inventory_refresh: bool = typer.Option(
-        False, "--inventory-refresh",
+        False,
+        "--inventory-refresh",
         help="Bypass cached MB API inventory and re-fetch.",
     ),
     include_external: bool = typer.Option(
-        False, "--include-external/--no-include-external",
+        False,
+        "--include-external/--no-include-external",
         help="Also probe external (non-site) media URLs referenced from posts.",
     ),
 ) -> None:
@@ -473,8 +530,10 @@ def verify_media(
                 "API view will include posts from all of the user's blogs.[/yellow]"
             )
 
-    cached = None if inventory_refresh else inventory_cache.load(
-        endpoint=micropub_endpoint, mp_destination=mp_destination
+    cached = (
+        None
+        if inventory_refresh
+        else inventory_cache.load(endpoint=micropub_endpoint, mp_destination=mp_destination)
     )
     if cached:
         mb_inventory, fetched_at = cached
@@ -483,12 +542,13 @@ def verify_media(
             f"({len(mb_inventory.items)} posts, fetched {fetched_at.isoformat(timespec='seconds')})"
         )
     else:
-        console.print(
-            f"[bold]Fetching MB inventory[/bold] (endpoint={micropub_endpoint})"
-        )
+        console.print(f"[bold]Fetching MB inventory[/bold] (endpoint={micropub_endpoint})")
         mb_inventory = _fetch_micropub_inventory(
-            token=token, endpoint=micropub_endpoint, page_size=200,
-            page_delay=0.5, mp_destination=mp_destination,
+            token=token,
+            endpoint=micropub_endpoint,
+            page_size=200,
+            page_delay=0.5,
+            mp_destination=mp_destination,
         )
         inventory_cache.save(
             mb_inventory, endpoint=micropub_endpoint, mp_destination=mp_destination
@@ -509,13 +569,17 @@ def verify_media(
     )
 
     probes_by_url = _gather_media_status(
-        urls=targets.all_urls, site_url=effective_site,
-        concurrency=concurrency, refresh=media_refresh,
+        urls=targets.all_urls,
+        site_url=effective_site,
+        concurrency=concurrency,
+        refresh=media_refresh,
     )
 
     # ---- 3. Reconcile ----
     findings = reconcile_media(
-        bar=inv, probes=probes_by_url, api_index=api_index,
+        bar=inv,
+        probes=probes_by_url,
+        api_index=api_index,
         classify_external=include_external,
     )
     finished = datetime.now().astimezone()
@@ -524,10 +588,12 @@ def verify_media(
 
     # ---- 4. Write report ----
     run_id = _make_run_id(bar, started)
-    md = render_media_markdown(inv, effective_site, findings,
-                               run_id=run_id, started_at=started, finished_at=finished)
-    js = render_media_json(inv, effective_site, findings,
-                           run_id=run_id, started_at=started, finished_at=finished)
+    md = render_media_markdown(
+        inv, effective_site, findings, run_id=run_id, started_at=started, finished_at=finished
+    )
+    js = render_media_json(
+        inv, effective_site, findings, run_id=run_id, started_at=started, finished_at=finished
+    )
     out_dir = REPORTS_ROOT / run_id
     out_dir.mkdir(parents=True, exist_ok=True)
     md_path = out_dir / "media-report.md"
@@ -537,9 +603,7 @@ def verify_media(
     console.print(f"[green]Wrote media report:[/green] {md_path}")
     console.print(f"[green]Wrote JSON:        [/green] {js_path}")
 
-    n_missing = sum(
-        1 for f in findings if f.classification == MediaClassification.MISSING
-    )
+    n_missing = sum(1 for f in findings if f.classification == MediaClassification.MISSING)
     if n_missing:
         raise typer.Exit(code=1)
 
@@ -571,8 +635,7 @@ def _gather_media_status(
     new_by_url: dict[str, MediaProbe] = {}
     if to_fetch:
         console.print(
-            f"[bold]Probing {len(to_fetch)} media URL(s)[/bold] "
-            f"(concurrency={concurrency})"
+            f"[bold]Probing {len(to_fetch)} media URL(s)[/bold] (concurrency={concurrency})"
         )
         with Progress(
             TextColumn("[progress.description]{task.description}"),
@@ -589,7 +652,9 @@ def _gather_media_status(
 
             new_probes = asyncio.run(
                 media_probe_many(
-                    to_fetch, concurrency=concurrency, on_progress=on_progress,
+                    to_fetch,
+                    concurrency=concurrency,
+                    on_progress=on_progress,
                 )
             )
         new_by_url = {p.url: p for p in new_probes}
@@ -611,14 +676,20 @@ def _print_media_summary(
     finished: datetime,
 ) -> None:
     from collections import Counter
+
     by_class = Counter(f.classification.value for f in findings)
     t = Table(title="Media summary", show_header=True, header_style="bold")
     t.add_column("classification")
     t.add_column("count", justify="right")
     for c in [
-        "media_missing", "media_site_missing", "media_site_error",
-        "media_size_mismatch", "media_orphan_referenced", "media_external_broken",
-        "media_orphan_present", "media_ok",
+        "media_missing",
+        "media_site_missing",
+        "media_site_error",
+        "media_size_mismatch",
+        "media_orphan_referenced",
+        "media_external_broken",
+        "media_orphan_present",
+        "media_ok",
     ]:
         t.add_row(c, str(by_class.get(c, 0)))
     console.print(t)
@@ -626,6 +697,7 @@ def _print_media_summary(
 
 
 # ---------------- stubs for v2 commands ----------------
+
 
 @app.command()
 def diff(

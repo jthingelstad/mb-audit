@@ -3,6 +3,7 @@
 Output is a list of `MediaFinding`s, one per BAR media asset (plus per
 external/orphan-referenced URL discovered through posts).
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -21,7 +22,7 @@ from mb_audit.live.micropub_media import ApiMediaIndex
 
 @dataclass(frozen=True, slots=True)
 class MediaFinding:
-    bar_path: str           # uploads/YYYY/...  ("" for finds discovered via post refs)
+    bar_path: str  # uploads/YYYY/...  ("" for finds discovered via post refs)
     expected_url: str
     classification: MediaClassification
     severity: Severity
@@ -69,15 +70,17 @@ def reconcile_media(
                 # Internal URL not in BAR uploads → orphan reference
                 seen_urls.add(media_url)
                 probe = probes.get(media_url)
-                findings.append(_make_finding(
-                    bar_path="",
-                    expected_url=media_url,
-                    classification=MediaClassification.ORPHAN_REFERENCED,
-                    bar_size=None,
-                    probe=probe,
-                    note=f"referenced by post {post.url} but not in BAR uploads/",
-                    evidence={"referenced_by": post.url},
-                ))
+                findings.append(
+                    _make_finding(
+                        bar_path="",
+                        expected_url=media_url,
+                        classification=MediaClassification.ORPHAN_REFERENCED,
+                        bar_size=None,
+                        probe=probe,
+                        note=f"referenced by post {post.url} but not in BAR uploads/",
+                        evidence={"referenced_by": post.url},
+                    )
+                )
             else:
                 # External URL — classify on probe status, but only if we
                 # actually probed it. Without a probe, stay silent rather
@@ -97,15 +100,17 @@ def reconcile_media(
                 else:
                     cls = MediaClassification.EXTERNAL_BROKEN
                     note = f"external media unreachable (status={probe.status})"
-                findings.append(_make_finding(
-                    bar_path="",
-                    expected_url=media_url,
-                    classification=cls,
-                    bar_size=None,
-                    probe=probe,
-                    note=note,
-                    evidence={"referenced_by": post.url},
-                ))
+                findings.append(
+                    _make_finding(
+                        bar_path="",
+                        expected_url=media_url,
+                        classification=cls,
+                        bar_size=None,
+                        probe=probe,
+                        note=note,
+                        evidence={"referenced_by": post.url},
+                    )
+                )
 
     return findings
 
@@ -138,10 +143,7 @@ def _classify_archive(
                 classification=MediaClassification.SITE_MISSING,
                 bar_size=asset.size_bytes,
                 probe=probe,
-                note=(
-                    f"site 404 but {len(refs)} live post(s) still reference "
-                    f"this media"
-                ),
+                note=(f"site 404 but {len(refs)} live post(s) still reference this media"),
                 evidence={"referenced_by": list(refs[:5])},
             )
         return _make_finding(
@@ -165,11 +167,7 @@ def _classify_archive(
 
     if 200 <= status < 400:
         # Present. Size match check, then orphan check.
-        if (
-            probe.size is not None
-            and asset.size_bytes
-            and probe.size != asset.size_bytes
-        ):
+        if probe.size is not None and asset.size_bytes and probe.size != asset.size_bytes:
             return _make_finding(
                 bar_path=asset.path,
                 expected_url=expected_url,
