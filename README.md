@@ -8,11 +8,11 @@ See `CLAUDE.md` for the design and `docs/bar-format.md` for the BAR file format 
 
 ```bash
 # Install (uv is one option; pip works too)
-uv sync
+uv sync --locked
 
 # Inspect a BAR
-uv run mb-audit inspect backups/your-backup.bar
+uv run --locked mb-audit inspect backups/your-backup.bar
 
 # Verify a live site against a BAR
-uv run mb-audit verify --bar backups/your-backup.bar --site https://example.com
+uv run --locked mb-audit verify --bar backups/your-backup.bar --site https://example.com
 ```
