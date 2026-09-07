@@ -2,7 +2,7 @@
 
 Audit a Micro.blog site against one or more BAR backup files. The BAR is the source of truth; the live site is verified to still contain everything the backup says it should.
 
-See `CLAUDE.md` for the design and `docs/bar-format.md` for the BAR file format reference.
+See `AGENTS.md` for the design and `docs/bar-format.md` for the BAR file format reference.
 
 ## Quick start
 
